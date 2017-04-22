@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		
+        <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="Just write article which l have learned technology!">
+        <link rel="shortcut icon" href="/asset/wincent.jpg"/>
+        <link rel="canonical" href="http://guolinn.com/">
+        <link rel="alternate" type="application/rss+xml" title="Wincent.Wang" href="/atom.xml">
+        <title>UNIX软中断处理 | Wincent&#39;s Blog</title>
+        <meta name="description" content="{{meta_description}}">
+
+        <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/styles/crisp.css">
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    </head>
+    
+		<body class="post-template">
+	
+
+        <header id="header">
+            <a id="logo" href="/"><img src="/asset/wincent.jpg" alt="Wincent's Blog" /></a>
+            <h1><a href="/">Wincent.Wang</a></h1>
+            <p>Tech Blog</p>
+            <div id="follow-icons">
+      <a href="http://instagram.com/https://github.com/wincentwang"><i class="fa fa-instagram fa-2x"></i></a>
+        <a href="http://pinterest.com/https://github.com/wincentwang"><i class="fa fa-pinterest-square fa-2x"></i></a>
+        <a href="http://github.com/https://github.com/wincentwang"><i class="fa fa-github-square fa-2x"></i></a>
+        <a href="http://facebook.com/https://github.com/wincentwang"><i class="fa fa-facebook-square fa-2x"></i></a>
+        <a href="http://twitter.com/https://github.com/wincentwang"><i class="fa fa-twitter-square fa-2x"></i></a>
+        <a href="http://linkedin.com/in/https://github.com/wincentwang"><i class="fa fa-linkedin-square fa-2x"></i></a>
+        <a href="/atom.xml"><i class="fa fa-rss-square fa-2x"></i></a>
+  </div>
+<h6><a href="/about">About</a></h6>
+        </header>
+
+        <main id="content">
+        
+
+<article class="post">
+  四月 23, 2017
+  
+    <span class="taglist">  &middot; 
+    
+    
+      <a href='/tags/UNIX/'>UNIX</a> 
+    
+    </span>
+  
+
+  <h1 class="post-title">UNIX软中断处理</h1>
+  <section class="post-content article-entry">
+    <h2 id="Code"><a href="#Code" class="headerlink" title="Code:"></a>Code:</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div></pre></td><td class="code"><pre><div class="line"><span class="comment">#include &lt;stdio.h&gt;</span></div><div class="line"><span class="comment">#include &lt;stdlib.h&gt;</span></div><div class="line"><span class="comment">#include &lt;unistd.h&gt;</span></div><div class="line"><span class="comment">#include &lt;sys/types.h&gt;</span></div><div class="line"><span class="comment">#include &lt;signal.h&gt;</span></div><div class="line">//父子进程通信</div><div class="line"><span class="function"><span class="title">main</span></span>()&#123;</div><div class="line">  int pid,status=1;</div><div class="line">  void func();</div><div class="line">  signal(SIGUSR1,func);</div><div class="line">  <span class="keyword">while</span>((pid=fork())==-1);</div><div class="line">  <span class="keyword">if</span>(pid)&#123;</div><div class="line">   //父进程</div><div class="line">   <span class="built_in">printf</span>(<span class="string">"Parent Process.\n"</span>);</div><div class="line">   <span class="built_in">printf</span>(<span class="string">"Parent send signal.\n"</span>);</div><div class="line">   <span class="built_in">kill</span>(pid,SIGUSR1);</div><div class="line">   pid=<span class="built_in">wait</span>(&amp;status);</div><div class="line">   <span class="built_in">printf</span>(<span class="string">"Child process=%d,status=%d\n"</span>,pid,status);</div><div class="line">  &#125;<span class="keyword">else</span>&#123;</div><div class="line">   //子进程</div><div class="line">    sleep(2);</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"Child process.\n"</span>);</div><div class="line">    execl(<span class="string">"/bin/ls"</span>,<span class="string">"ls"</span>,<span class="string">"-l"</span>,(char*)0); /* 映象改换 */</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"execl  error.\n"</span>);           /* 映象改换失败 */</div><div class="line">    <span class="built_in">exit</span>(2);</div><div class="line">  &#125;</div><div class="line">  <span class="built_in">printf</span>(<span class="string">"Program Finshed.Pid=%d.\n"</span>,pid);</div><div class="line">&#125;</div><div class="line">void <span class="function"><span class="title">func</span></span>()&#123;</div><div class="line"> //<span class="built_in">print</span> current date.</div><div class="line"> system(<span class="string">"date"</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+  </section>
+  <footer class="post-footer">
+    <!--
+    <section class="author">
+      <h4>Wincent.Wang</h4>
+      <p></p>
+    </section>
+    -->
+  </footer>
+</article>
+
+<nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2017/04/22/hello-world/">
+        ← prev <!--Hello World-->
+    </a>
+    
+    <span class="page-number">•</span>
+    
+</nav>
+
+
+        </main>
+        <footer id="footer">
+            <section id="footer-message">&copy; 2017 Wincent.Wang. All rights reserved.</section>
+        </footer>
+    </body>
+</html>
+
+
