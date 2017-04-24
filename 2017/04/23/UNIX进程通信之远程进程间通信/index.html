@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		
+        <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="Just write article which l have learned technology!">
+        <link rel="shortcut icon" href="/asset/wincent.jpg"/>
+        <link rel="canonical" href="http://guolinn.com/">
+        <link rel="alternate" type="application/rss+xml" title="Wincent.Wang" href="">
+        <title>UNIX进程通信之远程进程间通信 | Wincent&#39;s Blog</title>
+        <meta name="description" content="{{meta_description}}">
+
+        <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/styles/crisp.css">
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    </head>
+    
+		<body class="post-template">
+	
+
+        <header id="header">
+            <a id="logo" href="/"><img src="/asset/wincent.jpg" alt="Wincent's Blog" /></a>
+            <h1><a href="/">Wincent.Wang</a></h1>
+            <p>My essay about tech and life!</p>
+            <div id="follow-icons">
+          <a href="http://github.com/wincentwang"><i class="fa fa-github-square fa-2x"></i></a>
+          </div>
+<h6><a href="/about">About</a></h6>
+        </header>
+
+        <main id="content">
+        
+
+<article class="post">
+  四月 23, 2017
+  
+    <span class="taglist">  &middot; 
+    
+    
+      <a href='/tags/UNIX/'>UNIX</a> 
+    
+    </span>
+  
+
+  <h1 class="post-title">UNIX进程通信之远程进程间通信</h1>
+  <section class="post-content article-entry">
+    <h2 id="Code"><a href="#Code" class="headerlink" title="Code:"></a>Code:</h2><h3 id="sockcom-h"><a href="#sockcom-h" class="headerlink" title="sockcom.h"></a>sockcom.h</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/socket.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;netinet/in.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;netdb.h&gt;</span></span></div></pre></td></tr></table></figure>
+<h3 id="sockserver-c"><a href="#sockserver-c" class="headerlink" title="sockserver.c"></a>sockserver.c</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"sockcom.h"</span></span></div><div class="line">main()</div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> sockfd,newsockfd,length,count;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">server</span>;</span></div><div class="line">    <span class="keyword">char</span> buf[<span class="number">1024</span>];</div><div class="line">    <span class="comment">/*生成套接字*/</span></div><div class="line">    sockfd=socket(AF_INET,SOCK_STREAM,<span class="number">0</span>);</div><div class="line">    server.sin_family=AF_INET;  <span class="comment">/* 构成socked名（地址）和建立联系 */</span></div><div class="line">    server.sin_addr.s_addr=INADDR_ANY;</div><div class="line">    server.sin_port=<span class="number">0</span>;          <span class="comment">/* 选择一个已释放的端口号 */</span></div><div class="line">    <span class="keyword">if</span>(bind(sockfd,(struct sockaddr *)&amp;server,<span class="keyword">sizeof</span>(server))&lt;<span class="number">0</span>)</div><div class="line">        perror(<span class="string">"bind stream socket"</span>);</div><div class="line">    <span class="comment">/* 获取并打印端口号 */</span></div><div class="line">    length=<span class="keyword">sizeof</span>(server);</div><div class="line">    <span class="keyword">if</span>(getsockname(sockfd,(struct sockaddr *)&amp;server,&amp;length)&lt;<span class="number">0</span>)</div><div class="line">        perror(<span class="string">"getting socket name"</span>);</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"socket port #%d\n"</span>,ntohs(server.sin_port));</div><div class="line">    listen(sockfd,<span class="number">5</span>);</div><div class="line">    <span class="keyword">while</span>(<span class="number">1</span>)</div><div class="line">    &#123;</div><div class="line">        newsockfd=accept(sockfd,(struct sockaddr *)<span class="number">0</span>,(<span class="keyword">int</span> *)<span class="number">0</span>);</div><div class="line">        <span class="keyword">if</span>(!fork())</div><div class="line">        &#123;</div><div class="line">            <span class="comment">/*子进程*/</span></div><div class="line">            close(sockfd);</div><div class="line">            bzero(buf,<span class="keyword">sizeof</span>(buf));</div><div class="line">            <span class="comment">/*调用库函数，清缓冲区*/</span></div><div class="line">            <span class="keyword">if</span>((count=recv(newsockfd,buf,<span class="keyword">sizeof</span>(buf),<span class="number">0</span>))&lt;<span class="number">0</span>)</div><div class="line">                perror(<span class="string">"Reading stream message"</span>);</div><div class="line">            <span class="built_in">printf</span>(<span class="string">"message received: %s\n"</span>,buf);</div><div class="line">            <span class="built_in">exit</span>(<span class="number">0</span>);</div><div class="line">        &#125;</div><div class="line">        close(newsockfd);</div><div class="line">    &#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="sockclient-c"><a href="#sockclient-c" class="headerlink" title="sockclient.c"></a>sockclient.c</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">"sockcom.h"</span></span></div><div class="line">main(<span class="keyword">int</span> argc,<span class="keyword">char</span> **argv)</div><div class="line">&#123;</div><div class="line">    <span class="keyword">int</span> sockfd;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sockaddr_in</span> <span class="title">server</span>;</span></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">hostent</span> *<span class="title">hp</span>,*<span class="title">gethostbyname</span>();</span></div><div class="line">    <span class="keyword">char</span> msg[<span class="number">1024</span>];</div><div class="line">    sockfd=socket(AF_INET,SOCK_STREAM,<span class="number">0</span>);</div><div class="line">    <span class="comment">/* 与由命令行参数指定的主机建立连接 */</span></div><div class="line">    hp=gethostbyname(argv[<span class="number">1</span>]);</div><div class="line">    server.sin_family = AF_INET;</div><div class="line">    bcopy((<span class="keyword">char</span> *)hp-&gt;h_addr,(<span class="keyword">char</span> *)&amp;server.sin_addr.s_addr,hp-&gt;h_length);</div><div class="line">    server.sin_port=htons(atoi(argv[<span class="number">2</span>]));</div><div class="line">    connect(sockfd,(struct sockaddr *)&amp;server,<span class="keyword">sizeof</span>(server));</div><div class="line">    <span class="keyword">while</span>(<span class="number">1</span>)</div><div class="line">    &#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Enter send message:"</span>);</div><div class="line">        <span class="built_in">scanf</span>(<span class="string">"%s"</span>,msg);</div><div class="line">        <span class="keyword">if</span>(!<span class="built_in">strlen</span>(msg)) <span class="keyword">break</span>;</div><div class="line">        <span class="keyword">if</span>(send(sockfd,msg,<span class="built_in">strlen</span>(msg),<span class="number">0</span>)&lt;<span class="number">0</span>)</div><div class="line">            perror(<span class="string">"sendint message"</span>);</div><div class="line">        bzero(msg,<span class="keyword">sizeof</span>(msg));</div><div class="line">    &#125;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"EOF...disconnect\n"</span>);</div><div class="line">    close(sockfd);</div><div class="line">    <span class="built_in">exit</span>(<span class="number">0</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+  </section>
+  <footer class="post-footer">
+    <!--
+    <section class="author">
+      <h4>Wincent.Wang</h4>
+      <p></p>
+    </section>
+    -->
+  </footer>
+</article>
+
+<nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2017/04/23/UNIX线程操作/">
+        ← prev <!--UNIX线程操作-->
+    </a>
+    
+    <span class="page-number">•</span>
+    
+</nav>
+
+
+        </main>
+        <footer id="footer">
+            <section id="footer-message">&copy; 2017 Wincent.Wang. All rights reserved.</section>
+        </footer>
+    </body>
+</html>
+
+

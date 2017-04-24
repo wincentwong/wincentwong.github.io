@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		
+        <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="Just write article which l have learned technology!">
+        <link rel="shortcut icon" href="/asset/wincent.jpg"/>
+        <link rel="canonical" href="http://guolinn.com/">
+        <link rel="alternate" type="application/rss+xml" title="Wincent.Wang" href="">
+        <title>UNIX进程通信之共享内存 | Wincent&#39;s Blog</title>
+        <meta name="description" content="{{meta_description}}">
+
+        <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/styles/crisp.css">
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    </head>
+    
+		<body class="post-template">
+	
+
+        <header id="header">
+            <a id="logo" href="/"><img src="/asset/wincent.jpg" alt="Wincent's Blog" /></a>
+            <h1><a href="/">Wincent.Wang</a></h1>
+            <p>My essay about tech and life!</p>
+            <div id="follow-icons">
+          <a href="http://github.com/wincentwang"><i class="fa fa-github-square fa-2x"></i></a>
+          </div>
+<h6><a href="/about">About</a></h6>
+        </header>
+
+        <main id="content">
+        
+
+<article class="post">
+  四月 23, 2017
+  
+    <span class="taglist">  &middot; 
+    
+    
+      <a href='/tags/UNIX/'>UNIX</a> 
+    
+    </span>
+  
+
+  <h1 class="post-title">UNIX进程通信之共享内存</h1>
+  <section class="post-content article-entry">
+    <h2 id="Code"><a href="#Code" class="headerlink" title="Code:"></a>Code:</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/ipc.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/shm.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/sem.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHMKEY 18001     <span class="comment">/* 共享内存关键字 */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SIZE 1024        <span class="comment">/* 共享内存长度 */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SEMKEY1 19001    <span class="comment">/* 信号量组1关键字 */</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SEMKEY2 19002    <span class="comment">/* 信号量组2关键字 */</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title">semcall</span><span class="params">(<span class="keyword">int</span> sid,<span class="keyword">int</span> op)</span></span></div><div class="line">&#123;</div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sembuf</span> <span class="title">sb</span>;</span></div><div class="line">    sb.sem_num = <span class="number">0</span>;     <span class="comment">//信号灯编号0</span></div><div class="line">    sb.sem_op  = op;    <span class="comment">//信号灯操作数加1或减1</span></div><div class="line">    sb.sem_flg = <span class="number">0</span>;     <span class="comment">//操作标记</span></div><div class="line">    <span class="keyword">if</span>(semop(sid,&amp;sb,<span class="number">1</span>) == <span class="number">-1</span>)</div><div class="line">        perror(<span class="string">"semop"</span>);<span class="comment">//出错处理</span></div><div class="line">&#125;;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">semWait</span><span class="params">(<span class="keyword">int</span> sid)</span></span></div><div class="line">&#123;</div><div class="line">    semcall(sid,<span class="number">-1</span>);</div><div class="line">&#125;</div><div class="line"><span class="function"><span class="keyword">void</span> <span class="title">semSignal</span><span class="params">(<span class="keyword">int</span> sid)</span></span></div><div class="line">&#123;</div><div class="line">    semcall(sid,<span class="number">1</span>);</div><div class="line">&#125;</div><div class="line"></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">creatsem</span><span class="params">(key)</span></span></div><div class="line">key_t key;</div><div class="line">&#123;</div><div class="line"> <span class="keyword">int</span> sid;</div><div class="line"> <span class="keyword">union</span> semun &#123;   <span class="comment">/* 如sem.h中已定义，则省略 */</span></div><div class="line">	  <span class="keyword">int</span> val;</div><div class="line">	  <span class="class"><span class="keyword">struct</span> <span class="title">semid_ds</span> *<span class="title">buf</span>;</span></div><div class="line">	  ushort *<span class="built_in">array</span>;</div><div class="line"> &#125; arg;</div><div class="line"> <span class="keyword">if</span>((sid=semget(key,<span class="number">1</span>,<span class="number">0666</span>|IPC_CREAT))==<span class="number">-1</span>)</div><div class="line">	  perror(<span class="string">"semget"</span>);</div><div class="line"> arg.val=<span class="number">1</span>;</div><div class="line"> <span class="keyword">if</span>(semctl(sid,<span class="number">0</span>,SETVAL,arg)==<span class="number">-1</span>)</div><div class="line">	  perror(<span class="string">"semctl"</span>);</div><div class="line"> <span class="keyword">return</span>(sid);</div><div class="line">&#125;</div><div class="line"></div><div class="line">main()&#123;</div><div class="line">	<span class="keyword">char</span> *segaddr;</div><div class="line">	<span class="keyword">int</span> segid,sid1,sid2;</div><div class="line">	<span class="comment">/* 创建共享内存段 */</span></div><div class="line">	<span class="keyword">if</span>((segid=shmget(SHMKEY,SIZE,IPC_CREAT|<span class="number">0666</span>))==<span class="number">-1</span>)perror(<span class="string">"shmget"</span>);</div><div class="line">	<span class="comment">/* 将共享内存映射到进程数据空间 */</span></div><div class="line">	segaddr=shmat(segid,<span class="number">0</span>,<span class="number">0</span>);</div><div class="line">	sid1=creatsem(SEMKEY1);</div><div class="line">	<span class="comment">/* 创建两个信号量，初值为1 */</span></div><div class="line">	sid2=creatsem(SEMKEY2);</div><div class="line">	semWait(sid2);</div><div class="line">	<span class="comment">/* 置信号量2值为0，表示缓冲区空 */</span></div><div class="line">	<span class="keyword">if</span>(!fork())</div><div class="line">	<span class="keyword">while</span>(<span class="number">1</span>)&#123;           <span class="comment">/* 子进程，接收和输出 */</span></div><div class="line">		 semWait(sid2);</div><div class="line">		 <span class="built_in">printf</span>(<span class="string">"Received from Parent: %s\n"</span>,segaddr);</div><div class="line">		 semSignal(sid1);</div><div class="line">	&#125;</div><div class="line">	<span class="keyword">while</span>(<span class="number">1</span>) &#123;              <span class="comment">/* 父进程，输入和存储 */</span></div><div class="line">		semWait(sid1);</div><div class="line">		<span class="built_in">scanf</span>(<span class="string">"%s"</span>,segaddr);</div><div class="line">		semSignal(sid2);</div><div class="line">	&#125;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+  </section>
+  <footer class="post-footer">
+    <!--
+    <section class="author">
+      <h4>Wincent.Wang</h4>
+      <p></p>
+    </section>
+    -->
+  </footer>
+</article>
+
+<nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2017/04/23/UNIX进程通信之消息通信/">
+        ← prev <!--UNIX进程通信之消息通信-->
+    </a>
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2017/04/23/UNIX线程操作/">
+        <!--UNIX线程操作--> next →
+    </a>
+    
+</nav>
+
+
+        </main>
+        <footer id="footer">
+            <section id="footer-message">&copy; 2017 Wincent.Wang. All rights reserved.</section>
+        </footer>
+    </body>
+</html>
+
+
