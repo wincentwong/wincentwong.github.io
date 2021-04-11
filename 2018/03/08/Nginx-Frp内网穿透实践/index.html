@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		
+        <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="Just write article which l have learned technology!">
+        <link rel="shortcut icon" href="/assets/avatars.png"/>
+        <link rel="canonical" href="http://wincent.wang/">
+        <link rel="alternate" type="application/rss+xml" title="Wincent" href="">
+        <title>Nginx+Frp内网穿透实践 | Wincent&#39;s Blog</title>
+        <meta name="description" content="{{meta_description}}">
+
+        <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/styles/crisp.css">
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    <meta name="generator" content="Hexo 4.2.0"></head>
+    
+		<body class="post-template">
+	
+
+        <header id="header">
+            <a id="logo" href="/"><img src="/assets/avatars.png" alt="Wincent's Blog" /></a>
+            <h1><a href="/">Wincent</a></h1>
+            <p>Code the world !</p>
+            <div id="follow-icons">
+          <a href="http://github.com/https://github.com/wincentwang" target="_blank" rel="noopener"><i class="fa fa-github-square fa-2x"></i></a>
+          </div>
+<h6><a href="/about">About</a></h6>
+        </header>
+
+        <main id="content">
+        
+
+<article class="post">
+  三月 8, 2018
+  
+    <span class="taglist">  &middot; 
+    
+    
+      <a href='/tags/Golang/'>Golang</a> 
+    
+      <a href='/tags/Frp/'>Frp</a> 
+    
+      <a href='/tags/Nginx/'>Nginx</a> 
+    
+    </span>
+  
+
+  <h1 class="post-title">Nginx+Frp内网穿透实践</h1>
+  <section class="post-content article-entry">
+    <h3 id="0-准备环境"><a href="#0-准备环境" class="headerlink" title="0.准备环境"></a>0.准备环境</h3><ul>
+<li><a href="https://github.com/fatedier/frp/releases" target="_blank" rel="noopener" title="Frp Releases">Frp Releases</a> </li>
+<li>内网主机一台(Linux CentOS)</li>
+<li><a href="https://cloud.tencent.com/act/free?utm_source=portal&utm_medium=recommend&utm_campaign=free&utm_term=1226" target="_blank" rel="noopener" title="腾讯云(免费七天)">外网主机一台(腾讯云(免费七天)，阿里云)</a></li>
+<li>公网域名一个</li>
+</ul>
+<h3 id="1-环境安装"><a href="#1-环境安装" class="headerlink" title="1.环境安装"></a>1.环境安装</h3><h4 id="1-1-Frp安装及配置"><a href="#1-1-Frp安装及配置" class="headerlink" title="1.1 Frp安装及配置"></a>1.1 Frp安装及配置</h4><h5 id="1-1-1-安装"><a href="#1-1-1-安装" class="headerlink" title="1.1.1 安装"></a>1.1.1 安装</h5><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">wget https://github.com/fatedier/frp/releases/download/v0.16.0/frp_0.16.0_linux_amd64.tar.gz</span><br><span class="line">tar -zxvf frp_0.16.0_linux_amd64.tar.gz</span><br><span class="line">cd frp_0.16.0_linux_amd64</span><br><span class="line">rm -rf frpc*</span><br><span class="line"><span class="meta">#</span><span class="bash"> 后台启动 nohup ./frps -c ./frps.ini &gt;/dev/null 2&gt;&amp;1 &amp;</span></span><br></pre></td></tr></table></figure>
+
+<h5 id="1-1-2-Frp服务端配置"><a href="#1-1-2-Frp服务端配置" class="headerlink" title="1.1.2 Frp服务端配置"></a>1.1.2 Frp服务端配置</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">[common]</span><br><span class="line">bind_port &#x3D; 9898</span><br><span class="line">dashboard_addr &#x3D; 0.0.0.0</span><br><span class="line">dashboard_port &#x3D; 7500</span><br><span class="line">dashboard_user &#x3D; admin</span><br><span class="line">dashboard_pwd &#x3D; admin</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-1-3-Frp客户端配置"><a href="#1-1-3-Frp客户端配置" class="headerlink" title="1.1.3 Frp客户端配置"></a>1.1.3 Frp客户端配置</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">[common]</span><br><span class="line">server_addr &#x3D; 1.1.1.1 #公网主机IP</span><br><span class="line">server_port &#x3D; 9898</span><br><span class="line"></span><br><span class="line">[ssh]</span><br><span class="line">type &#x3D; tcp</span><br><span class="line">local_ip &#x3D; 127.0.0.1</span><br><span class="line">local_port &#x3D; 22</span><br><span class="line">remote_port &#x3D; 6000</span><br><span class="line"></span><br><span class="line">[web50000]</span><br><span class="line">type &#x3D; tcp</span><br><span class="line">local_ip&#x3D;127.0.0.1</span><br><span class="line">local_port &#x3D; 50000</span><br><span class="line">use_encryption&#x3D;false</span><br><span class="line">use_compression&#x3D;true</span><br><span class="line">remote_port&#x3D;50000</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">[web50001]</span><br><span class="line">type &#x3D; tcp</span><br><span class="line">local_ip&#x3D;127.0.0.1</span><br><span class="line">local_port &#x3D; 50001</span><br><span class="line">use_encryption&#x3D;false</span><br><span class="line">use_compression&#x3D;true</span><br><span class="line">remote_port&#x3D;50001</span><br><span class="line">#后台启动 nohup .&#x2F;frpc -c .&#x2F;frpc.ini &gt;&#x2F;dev&#x2F;null 2&gt;&amp;1 &amp;</span><br></pre></td></tr></table></figure>
+
+<h4 id="1-2-Nginx-安装及配置"><a href="#1-2-Nginx-安装及配置" class="headerlink" title="1.2 Nginx 安装及配置"></a>1.2 Nginx 安装及配置</h4><h5 id="1-2-1-Nginx安装"><a href="#1-2-1-Nginx安装" class="headerlink" title="1.2.1 Nginx安装"></a>1.2.1 Nginx安装</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">yum -y install gcc zlib zlib-devel pcre-devel openssl openssl-devel</span><br><span class="line">cd &#x2F;usr&#x2F;local</span><br><span class="line">mkdir nginx</span><br><span class="line">cd nginx</span><br><span class="line">wget http:&#x2F;&#x2F;nginx.org&#x2F;download&#x2F;nginx-1.13.7.tar.gz</span><br><span class="line">tar -xvf nginx-1.13.7.tar.gz</span><br><span class="line">cd &#x2F;usr&#x2F;local&#x2F;nginx</span><br><span class="line">.&#x2F;configure &amp;&amp; make &amp;&amp; make install </span><br><span class="line">vi nginx.conf</span><br></pre></td></tr></table></figure>
+
+<h5 id="1-2-2-Nginx配置"><a href="#1-2-2-Nginx配置" class="headerlink" title="1.2.2 Nginx配置"></a>1.2.2 Nginx配置</h5><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">#添加Server，转发一个，添加一个，frp服务端和客服端保持一致  </span><br><span class="line">server &#123;</span><br><span class="line">	listen       80;</span><br><span class="line">	server_name  test.xxx.com;</span><br><span class="line"></span><br><span class="line">	location &#x2F; &#123;</span><br><span class="line">		proxy_pass http:&#x2F;&#x2F;127.0.0.1:50000;</span><br><span class="line"></span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	error_page 404 &#x2F;404.html;</span><br><span class="line">		location &#x3D; &#x2F;40x.html &#123;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	error_page 500 502 503 504 &#x2F;50x.html;</span><br><span class="line">		location &#x3D; &#x2F;50x.html &#123;</span><br><span class="line">	&#125;</span><br><span class="line">	proxy_connect_timeout 300s;</span><br><span class="line">	proxy_send_timeout 300s;</span><br><span class="line">	proxy_read_timeout 300s;</span><br><span class="line">	proxy_set_header X-Real-IP $remote_addr;</span><br><span class="line">	proxy_set_header REMOTE-HOST $remote_addr;</span><br><span class="line">	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h3 id="2-域名解析"><a href="#2-域名解析" class="headerlink" title="2.域名解析"></a>2.域名解析</h3><ol>
+<li>建立多个二级域名解析，如：aaa.xxx.com,bbb.xxx.com,ccc.xxx.com </li>
+<li>解析到同一个公网主机IP上</li>
+<li>在内网机器上，开三台tomcat(注意端口冲突)，修改tomcat/webapps/ROOT/index.jsp(做标识)，在frp client中配置</li>
+</ol>
+<h3 id="3-测试"><a href="#3-测试" class="headerlink" title="3.测试"></a>3.测试</h3><p>可以看到，不同的二级域名可以访问内网同一台机器上不同端口提供的服务。</p>
+<h3 id="4-参考资料"><a href="#4-参考资料" class="headerlink" title="4.参考资料"></a>4.参考资料</h3><ul>
+<li><a href="https://github.com/fatedier/frp" target="_blank" rel="noopener" title="Frp Github">Frp Document</a> </li>
+</ul>
+
+  </section>
+  <footer class="post-footer">
+    <!--
+    <section class="author">
+      <h4>Wincent</h4>
+      <p></p>
+    </section>
+    -->
+  </footer>
+</article>
+
+<nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2018/03/12/%E9%80%9A%E8%BF%87You-Get%E4%B8%8B%E8%BD%BD%E7%99%BE%E5%AE%B6%E8%AE%B2%E5%9D%9B%E8%A7%86%E9%A2%91%E5%AE%9E%E8%B7%B5/">
+        <!--← prev -->← 通过You-Get下载百家讲坛视频实践
+    </a>
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2018/02/28/UNIX%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E4%B9%8B%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98/">
+      UNIX进程通信之共享内存 →  <!--next → --> 
+    </a>
+    
+</nav>
+
+
+        </main>
+        <footer id="footer">
+            <section id="footer-message">&copy; 2021 Wincent. All rights reserved. Powered by <a href="http://wincent.wang" target="_blank">Wincent</a></section>
+        </footer>
+    </body>
+</html>
+
+

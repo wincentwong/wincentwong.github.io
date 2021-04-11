@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		
+        <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="Just write article which l have learned technology!">
+        <link rel="shortcut icon" href="/assets/avatars.png"/>
+        <link rel="canonical" href="http://wincent.wang/">
+        <link rel="alternate" type="application/rss+xml" title="Wincent" href="">
+        <title>UNIX软中断处理 | Wincent&#39;s Blog</title>
+        <meta name="description" content="{{meta_description}}">
+
+        <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/styles/crisp.css">
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    <meta name="generator" content="Hexo 4.2.0"></head>
+    
+		<body class="post-template">
+	
+
+        <header id="header">
+            <a id="logo" href="/"><img src="/assets/avatars.png" alt="Wincent's Blog" /></a>
+            <h1><a href="/">Wincent</a></h1>
+            <p>Code the world !</p>
+            <div id="follow-icons">
+          <a href="http://github.com/https://github.com/wincentwang" target="_blank" rel="noopener"><i class="fa fa-github-square fa-2x"></i></a>
+          </div>
+<h6><a href="/about">About</a></h6>
+        </header>
+
+        <main id="content">
+        
+
+<article class="post">
+  二月 28, 2018
+  
+    <span class="taglist">  &middot; 
+    
+    
+      <a href='/tags/Unix/'>Unix</a> 
+    
+    </span>
+  
+
+  <h1 class="post-title">UNIX软中断处理</h1>
+  <section class="post-content article-entry">
+    <h2 id="Code"><a href="#Code" class="headerlink" title="Code:"></a>Code:</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;signal.h&gt;</span></span></span><br><span class="line"><span class="comment">//父子进程通信</span></span><br><span class="line">main()&#123;</span><br><span class="line">  <span class="keyword">int</span> pid,status=<span class="number">1</span>;</span><br><span class="line">  <span class="function"><span class="keyword">void</span> <span class="title">func</span><span class="params">()</span></span>;</span><br><span class="line">  signal(SIGUSR1,func);</span><br><span class="line">  <span class="keyword">while</span>((pid=fork())==<span class="number">-1</span>);</span><br><span class="line">  <span class="keyword">if</span>(pid)&#123;</span><br><span class="line">   <span class="comment">//父进程</span></span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">"Parent Process.\n"</span>);</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">"Parent send signal.\n"</span>);</span><br><span class="line">   kill(pid,SIGUSR1);</span><br><span class="line">   pid=wait(&amp;status);</span><br><span class="line">   <span class="built_in">printf</span>(<span class="string">"Child process=%d,status=%d\n"</span>,pid,status);</span><br><span class="line">  &#125;<span class="keyword">else</span>&#123;</span><br><span class="line">   <span class="comment">//子进程</span></span><br><span class="line">    sleep(<span class="number">2</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"Child process.\n"</span>);</span><br><span class="line">    execl(<span class="string">"/bin/ls"</span>,<span class="string">"ls"</span>,<span class="string">"-l"</span>,(<span class="keyword">char</span>*)<span class="number">0</span>); <span class="comment">/* 映象改换 */</span></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"execl  error.\n"</span>);           <span class="comment">/* 映象改换失败 */</span></span><br><span class="line">    <span class="built_in">exit</span>(<span class="number">2</span>);</span><br><span class="line">  &#125;</span><br><span class="line">  <span class="built_in">printf</span>(<span class="string">"Program Finshed.Pid=%d.\n"</span>,pid);</span><br><span class="line">&#125;</span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">func</span><span class="params">()</span></span>&#123;</span><br><span class="line"> <span class="comment">//print current date.</span></span><br><span class="line"> system(<span class="string">"date"</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+  </section>
+  <footer class="post-footer">
+    <!--
+    <section class="author">
+      <h4>Wincent</h4>
+      <p></p>
+    </section>
+    -->
+  </footer>
+</article>
+
+<nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2018/02/28/VMware%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%89%E7%A7%8D%E8%81%94%E7%BD%91%E6%96%B9%E6%B3%95%E5%8F%8A%E5%8E%9F%E7%90%86/">
+        <!--← prev -->← VMware虚拟机三种联网方法及原理
+    </a>
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2018/02/28/%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%E5%AF%B9%E6%AF%94%E5%92%8C%E4%BB%A3%E7%A0%81%E5%AE%9E%E7%8E%B0/">
+      排序算法对比和代码实现 →  <!--next → --> 
+    </a>
+    
+</nav>
+
+
+        </main>
+        <footer id="footer">
+            <section id="footer-message">&copy; 2021 Wincent. All rights reserved. Powered by <a href="http://wincent.wang" target="_blank">Wincent</a></section>
+        </footer>
+    </body>
+</html>
+
+

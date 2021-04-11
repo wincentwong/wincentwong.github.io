@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+    <head>
+		
+        <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <meta name="description" content="Just write article which l have learned technology!">
+        <link rel="shortcut icon" href="/assets/avatars.png"/>
+        <link rel="canonical" href="http://wincent.wang/">
+        <link rel="alternate" type="application/rss+xml" title="Wincent" href="">
+        <title>UNIX线程操作 | Wincent&#39;s Blog</title>
+        <meta name="description" content="{{meta_description}}">
+
+        <link href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet">
+        <link rel="stylesheet" type="text/css" href="/styles/crisp.css">
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+
+    <meta name="generator" content="Hexo 4.2.0"></head>
+    
+		<body class="post-template">
+	
+
+        <header id="header">
+            <a id="logo" href="/"><img src="/assets/avatars.png" alt="Wincent's Blog" /></a>
+            <h1><a href="/">Wincent</a></h1>
+            <p>Code the world !</p>
+            <div id="follow-icons">
+          <a href="http://github.com/https://github.com/wincentwang" target="_blank" rel="noopener"><i class="fa fa-github-square fa-2x"></i></a>
+          </div>
+<h6><a href="/about">About</a></h6>
+        </header>
+
+        <main id="content">
+        
+
+<article class="post">
+  二月 28, 2018
+  
+    <span class="taglist">  &middot; 
+    
+    
+      <a href='/tags/Unix/'>Unix</a> 
+    
+    </span>
+  
+
+  <h1 class="post-title">UNIX线程操作</h1>
+  <section class="post-content article-entry">
+    <h2 id="Code"><a href="#Code" class="headerlink" title="Code:"></a>Code:</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h &gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"><span class="comment">/*Linux Complie Command: gcc thread.c -o thread -plthread  */</span></span><br><span class="line"><span class="keyword">int</span> nthreads = <span class="number">1</span>;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> *<span class="title">dowork</span> <span class="params">(<span class="keyword">void</span> *params)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> j = *(<span class="keyword">int</span> *)params;</span><br><span class="line">    <span class="keyword">int</span> term = (j+<span class="number">1</span>)*(j+<span class="number">1</span>);</span><br><span class="line">    *(<span class="keyword">int</span> *)params = term;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"the thread [%d]: term =%d\n"</span>,j,term);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> **argv)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> i;</span><br><span class="line">    <span class="keyword">pthread_t</span> threads[<span class="number">100</span>];</span><br><span class="line">    <span class="keyword">int</span> pthread_data[<span class="number">100</span>];</span><br><span class="line">    <span class="keyword">int</span> sum = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (argc==<span class="number">2</span>)</span><br><span class="line">        nthreads = atoi (argv[<span class="number">1</span>]);</span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;nthreads; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        pthread_data[i]=i ;</span><br><span class="line">        pthread_create(&amp;threads[i], <span class="literal">NULL</span>, dowork,&amp;pthread_data[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (i=<span class="number">0</span>; i&lt;nthreads; i++)</span><br><span class="line">    &#123;</span><br><span class="line">        pthread_join(threads [i], <span class="literal">NULL</span>);</span><br><span class="line">        sum+=pthread_data[i];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">"The Sum = %d\n"</span>, sum);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+  </section>
+  <footer class="post-footer">
+    <!--
+    <section class="author">
+      <h4>Wincent</h4>
+      <p></p>
+    </section>
+    -->
+  </footer>
+</article>
+
+<nav class="pagination" role="pagination">
+    
+    <a class="newer-posts" href="/2018/02/28/UNIX%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E4%B9%8B%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98/">
+        <!--← prev -->← UNIX进程通信之共享内存
+    </a>
+    
+    <span class="page-number">•</span>
+    
+    <a class="older-posts" href="/2018/02/28/UNIX%E8%BF%9B%E7%A8%8B%E9%80%9A%E4%BF%A1%E4%B9%8B%E6%9C%89%E5%90%8D%E7%AE%A1%E9%81%93%E4%B8%8E%E6%97%A0%E5%90%8D%E7%AE%A1%E9%81%93/">
+      UNIX进程通信之有名管道与无名管道 →  <!--next → --> 
+    </a>
+    
+</nav>
+
+
+        </main>
+        <footer id="footer">
+            <section id="footer-message">&copy; 2021 Wincent. All rights reserved. Powered by <a href="http://wincent.wang" target="_blank">Wincent</a></section>
+        </footer>
+    </body>
+</html>
+
+
